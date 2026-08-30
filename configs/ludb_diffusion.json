@@ -1,0 +1,89 @@
+{
+    "model_type": "diffusion_cond",
+    "sample_rate": 500,
+    "audio_channels": 12,
+    "sample_size": 500,
+    "dataset_type": "ludb_npy",
+    "data_path": "data/ludb/fold_0/train_data.npy",
+    "label_path": "data/ludb/fold_0/train_labels.npy",
+    "patient_info_path": "data/ludb/fold_0/train_pinfor.npy",
+    "mask_path": "data/ludb/fold_0/train_masks.npy",
+    "model": {
+        "pretransform": {
+            "type": "identity",
+            "config": {}
+        },
+        "conditioning": {
+            "configs": [
+                {
+                    "id": "disease_labels",
+                    "type": "ecg_labels",
+                    "config": {
+                        "input_dim": 1,
+                        "output_dim": 512,
+                        "hidden_dim": 256
+                    }
+                },
+                {
+                    "id": "patient_info",
+                    "type": "ecg_patient_info",
+                    "config": {
+                        "input_dim": 2,
+                        "output_dim": 512
+                    }
+                },
+                {
+                    "id": "seg_mask",
+                    "type": "ecg_mask",
+                    "config": {
+                        "input_dim": 4,
+                        "output_dim": 512,
+                        "sample_size": 500,
+                        "audio_channels": 12,
+                        "downsampling_ratio": 1
+                    }
+                }
+            ],
+            "cond_dim": 512
+        },
+        "diffusion": {
+            "type": "dit",
+            "cross_attention_cond_ids": ["disease_labels"],
+            "prepend_cond_ids": ["patient_info"],
+            "mask_cond_ids": ["seg_mask"],
+            "config": {
+                "io_channels": 12,
+                "embed_dim": 512,
+                "depth": 12,
+                "num_heads": 8,
+                "patch_size": 1,
+                "cond_token_dim": 512,
+                "global_cond_dim": 0,
+                "mask_cond_dim": 512,
+                "global_cond_type": "prepend",
+                "project_cond_tokens": false,
+                "prepend_cond_dim": 512,
+                "transformer_type": "continuous_transformer"
+            }
+        },
+        "io_channels": 12
+    },
+    "training": {
+        "learning_rate": 1e-4,
+        "batch_size": 32,
+        "num_workers": 8,
+        "cfg_dropout_prob": 0.1,
+        "demo": {
+            "demo_every": 1024,
+            "demo_steps": 100,
+            "num_demos": 2,
+            "demo_cond": [
+                {
+                    "disease_labels": [1],
+                    "patient_info": [0.5, 0.6]
+                }
+            ],
+            "demo_cfg_scales": [3, 7]
+        }
+    }
+}
